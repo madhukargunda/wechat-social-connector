@@ -11,8 +11,8 @@
 	</parent>
 	<groupId>study.pattern.social</groupId>
 	<artifactId>wechat-social-connector</artifactId>
-	<version>1.0.0</version>
-	<name>demo</name>
+	<version>2.0.0</version>
+	<name>wechat-social-connector</name>
 	<description>Demo Project for wechat Social Connector</description>
 
 	<properties>
@@ -43,6 +43,14 @@
 			<artifactId>lombok</artifactId>
 			<optional>true</optional>
 		</dependency>
+		
+		<dependency>
+			<groupId>com.github.docker-java</groupId>
+		    <artifactId>docker-java</artifactId>
+		    <version>3.2.1</version>
+		</dependency>
+		
+		
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-test</artifactId>
@@ -91,6 +99,7 @@
 			<plugin>
 				<groupId>io.fabric8</groupId>
 				<artifactId>docker-maven-plugin</artifactId>
+				<version>0.33.0</version>
 				<configuration>
 					<verbose>true</verbose>
 					<registry>${docker.registry}</registry>

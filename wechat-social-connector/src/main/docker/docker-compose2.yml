@@ -1,0 +1,36 @@
+version: '3.3'
+
+services:
+  wechat-1:
+    image: madhukargunda/wechat-social-connector:2.0.0
+    container_name: wechat-1
+    ports:
+     - 81:8000
+    networks:
+     - web 
+    depends_on:
+     - wechat-2
+            
+  wechat-2:
+    image: madhukargunda/wechat-social-connector:2.0.0
+    container_name: wechat-2
+    ports:
+     - 82:8000
+    networks:
+     - web
+     
+  haproxy:
+    build: ./haproxy
+    container_name: haproxy
+    ports:
+     - 80:80
+    networks:
+     - web
+    depends_on:
+     - wechat-1
+  
+     
+networks:
+ web:
+  
+    
