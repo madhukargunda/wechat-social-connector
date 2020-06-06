@@ -14,10 +14,12 @@
 	<version>2.0.0</version>
 	<name>wechat-social-connector</name>
 	<description>Demo Project for wechat Social Connector</description>
+	<packaging>${project.packaging}</packaging>
 
 	<properties>
 		<java.version>1.8</java.version>
 		<docker.registry>madhukargunda</docker.registry>
+		<environment-name>tomcat</environment-name>
 	</properties>
 
 	<dependencies>
@@ -43,14 +45,14 @@
 			<artifactId>lombok</artifactId>
 			<optional>true</optional>
 		</dependency>
-		
+
 		<dependency>
 			<groupId>com.github.docker-java</groupId>
-		    <artifactId>docker-java</artifactId>
-		    <version>3.2.1</version>
+			<artifactId>docker-java</artifactId>
+			<version>3.2.1</version>
 		</dependency>
-		
-		
+
+
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-test</artifactId>
@@ -64,90 +66,186 @@
 		</dependency>
 	</dependencies>
 
+	<profiles>
+		<profile>
+			<id>dev</id>
+			<activation>
+				<activeByDefault>true</activeByDefault>
+			</activation>
+			<properties>
+				<project.packaging>jar</project.packaging>
+			</properties>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>io.fabric8</groupId>
+						<artifactId>docker-maven-plugin</artifactId>
+						<version>0.33.0</version>
+						<configuration>
+							<verbose>true</verbose>
+							<registry>${docker.registry}</registry>
+							<dockerFileDir>src/main/docker/embded-tomcat</dockerFileDir>
+							<images>
+								<image>
+									<name>${docker.registry}/${project.artifactId}:${project.version}</name>  <!-- Name of the image which we want to build -->
+									<build>
+										<dockerFileDir>${project.basedir}/src/main/docker/embded-tomcat</dockerFileDir>
+										<tags>
+											<tag>${project.version}</tag>
+											<tag>latest</tag>
+										</tags>
+
+										<assembly>
+											<inline>
+												<dependencySets>
+													<dependencySet>
+														<includes>
+															<include>${project.groupId}:${project.artifactId}</include>
+														</includes>
+														<outputFileNameMapping>app.jar</outputFileNameMapping>
+													</dependencySet>
+												</dependencySets>
+											</inline>
+										</assembly>
+									</build>
+								</image>
+							</images>
+						</configuration>
+						<executions>
+							<execution>
+								<id>build-docker-image</id>
+								<phase>package</phase> <!-- package -->
+								<goals>
+									<goal>build</goal>
+								</goals>
+							</execution>
+							<execution>
+								<id>push-docker-image</id>
+								<phase>deploy</phase> <!-- deploy -->
+								<goals>
+									<goal>push</goal>
+								</goals>
+							</execution>
+						</executions>
+					</plugin>
+
+					<plugin>
+						<groupId>org.springframework.boot</groupId>
+						<artifactId>spring-boot-maven-plugin</artifactId>
+					</plugin>
+
+				</plugins>
+			</build>
+		</profile>
+		<profile>
+			<id>war</id>
+			<properties>
+				<project.packaging>war</project.packaging>
+			</properties>
+			<build>
+				<finalName>app</finalName>
+				<plugins>
+					<plugin>
+						<groupId>io.fabric8</groupId>
+						<artifactId>docker-maven-plugin</artifactId>
+						<version>0.33.0</version>
+						<configuration>
+							<skip>false</skip>
+							<verbose>true</verbose>
+							<registry>${docker.registry}</registry>
+							<dockerFileDir>src/main/docker/tomcat</dockerFileDir>
+							<images>
+								<image>
+									<name>${docker.registry}/${environment-name}/${project.artifactId}:${project.version}</name>  <!-- Name of the image which we want to build -->
+									<build>
+										<dockerFileDir>${project.basedir}/src/main/docker/tomcat</dockerFileDir>
+										<tags>
+											<tag>${project.version}</tag>
+											<tag>latest</tag>
+										</tags>
+										<assembly>
+											<inline>
+												<dependencySets>
+													<dependencySet>
+														<includes>
+															<include>${project.groupId}:${project.artifactId}</include>
+														</includes>
+														<outputFileNameMapping>app.war</outputFileNameMapping>
+													</dependencySet>
+												</dependencySets>
+											</inline>
+										</assembly>
+									</build>
+								</image>
+							</images>
+						</configuration>
+						<executions>
+							<execution>
+								<id>build-docker-image</id>
+								<phase>package</phase> <!-- package -->
+								<goals>
+									<goal>build</goal>
+								</goals>
+							</execution>
+							<execution>
+								<id>push-docker-image</id>
+								<phase>deploy</phase> <!-- deploy -->
+								<goals>
+									<goal>push</goal>
+								</goals>
+							</execution>
+						</executions>
+					</plugin>
+					<plugin>
+						<groupId>com.spotify</groupId>
+						<artifactId>dockerfile-maven-plugin</artifactId>
+						<version>1.4.13</version>
+						<configuration>
+						<skip>true</skip>
+							<useMavenSettingsForAuth>false</useMavenSettingsForAuth>
+							<imageName>${docker.registry}/${environment-name}/${project.artifactId}</imageName>
+							<tag>${project.version}</tag>
+							<contextDirectory>src/main/docker/tomcat</contextDirectory>
+							<buildArgs>
+								<JAR_FILE>target/${finalName}.war</JAR_FILE>
+							</buildArgs>
+							<pullNewerImage>false</pullNewerImage>
+							<skipDockerInfo>true</skipDockerInfo>
+						</configuration>
+						<executions>
+							 <execution>
+								<id>default</id>
+								<phase>install</phase>
+								<goals>
+									<goal>build</goal>
+								</goals>
+							</execution>
+						</executions>
+					</plugin>
+				</plugins>
+			</build>
+			<dependencies>
+				<dependency>
+					<groupId>org.springframework.boot</groupId>
+					<artifactId>spring-boot-starter-web</artifactId>
+					<exclusions>
+						<exclusion>
+							<artifactId>spring-boot-starter-tomcat</artifactId>
+							<groupId>org.springframework.boot</groupId>
+						</exclusion>
+					</exclusions>
+				</dependency>
+				<dependency>
+					<groupId>javax.servlet</groupId>
+					<artifactId>javax.servlet-api</artifactId>
+					<version>3.1.0</version>
+					<scope>provided</scope>
+				</dependency>
+			</dependencies>
+		</profile>
+	</profiles>
+
 	<build>
-		<plugins>
-			<plugin>
-				<groupId>org.springframework.boot</groupId>
-				<artifactId>spring-boot-maven-plugin</artifactId>
-			</plugin>
-			<!-- <plugin>
-				<groupId>com.spotify</groupId>
-				<artifactId>docker-maven-plugin</artifactId>
-				<version>0.4.11</version>
-				<configuration>
-					<imageName>${docker.registry}/${project.artifactId}:${project.version}</imageName>
-					<dockerDirectory>src/main/docker</dockerDirectory>
-					<resources>
-						<resource>
-							<targetPath>/</targetPath>
-							<directory>${project.build.directory}</directory>
-							<include>${project.build.finalName}.jar</include>
-						</resource>
-					</resources>
-				</configuration>
-				<executions>
-					<execution>
-						<id>default</id>
-						<phase>install</phase>
-						<goals>
-							<goal>build</goal>
-						</goals>
-					</execution>
 
-				</executions>
-			</plugin> -->
-			<plugin>
-				<groupId>io.fabric8</groupId>
-				<artifactId>docker-maven-plugin</artifactId>
-				<version>0.33.0</version>
-				<configuration>
-					<verbose>true</verbose>
-					<registry>${docker.registry}</registry>
-					<dockerFileDir>src/main/docker</dockerFileDir>
-					<images>
-						<image>
-							<name>${docker.registry}/${project.artifactId}:${project.version}</name>  <!--  Name of the image which we want to build -->
-							<build>
-								<dockerFileDir>${project.basedir}/src/main/docker</dockerFileDir>
-								<tags>
-									<tag>${project.version}</tag>
-									<tag>latest</tag>
-								</tags>
-
-								<assembly>
-									<inline>
-										<dependencySets>
-											<dependencySet>
-												<includes>
-													<include>${project.groupId}:${project.artifactId}</include>
-												</includes>
-												<outputFileNameMapping>app.jar</outputFileNameMapping>
-											</dependencySet>
-										</dependencySets>
-									</inline>
-								</assembly>
-							</build>
-						</image>
-					</images>
-				</configuration>
-				<executions>
-					<execution>
-						<id>build-docker-image</id>
-						<phase>package</phase> <!-- package -->
-						<goals>
-							<goal>build</goal>
-						</goals>
-					</execution>
-					<execution>
-						<id>push-docker-image</id>
-						<phase>deploy</phase> <!-- deploy -->
-						<goals>
-							<goal>push</goal>
-						</goals>
-					</execution>
-				</executions>
-			</plugin>
-		</plugins>
 	</build>
-
 </project>
