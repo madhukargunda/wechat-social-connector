@@ -143,7 +143,7 @@
 				<project.packaging>war</project.packaging>
 			</properties>
 			<build>
-				<finalName>app</finalName>
+				<finalName>ROOT</finalName>
 				<plugins>
 					<plugin>
 						<groupId>io.fabric8</groupId>
@@ -170,7 +170,7 @@
 														<includes>
 															<include>${project.groupId}:${project.artifactId}</include>
 														</includes>
-														<outputFileNameMapping>app.war</outputFileNameMapping>
+														<outputFileNameMapping>ROOT.war</outputFileNameMapping>
 													</dependencySet>
 												</dependencySets>
 											</inline>
